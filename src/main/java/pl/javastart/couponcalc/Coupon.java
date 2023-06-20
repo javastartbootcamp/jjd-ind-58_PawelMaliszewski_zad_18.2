@@ -17,4 +17,6 @@ public class Coupon {
     public int getDiscountValueInPercents() {
         return discountValueInPercents;
     }
+
+
 }
