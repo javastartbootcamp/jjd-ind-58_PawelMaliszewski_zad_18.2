@@ -11,7 +11,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class PriceCalculatorTest {
 
-
     @Mock
     PriceCalculator priceCalculator;
 
@@ -167,6 +166,24 @@ public class PriceCalculatorTest {
 
         // then
         assertThat(result).isEqualTo(2607.66);
+    }
+
+    @Test
+    public void shouldReturnPriceForNoCoupons() {
+
+        // given
+        List<Product> products = new ArrayList<>();
+        products.add(new Product("Amplifier", 2999, Category.ENTERTAINMENT));
+        products.add(new Product("Masło", 5.99, Category.HOME));
+        products.add(new Product("Wycieraczki", 150, Category.CAR));
+        products.add(new Product("EarPhones", 100, Category.ENTERTAINMENT));
+        products.add(new Product("Chleb", 4.58, Category.FOOD));
+
+        // when
+        double result = priceCalculator.calculatePrice(products, null);
+
+        // then
+        assertThat(result).isEqualTo(3259.57);
     }
 
 

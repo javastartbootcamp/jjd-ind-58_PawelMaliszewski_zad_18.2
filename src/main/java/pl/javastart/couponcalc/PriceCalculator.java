@@ -1,67 +1,57 @@
 package pl.javastart.couponcalc;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 public class PriceCalculator {
 
     public double calculatePrice(List<Product> products, List<Coupon> coupons) {
-        double totalPrice = 0;
-        if (products != null) {
-            totalPrice = totalProductsPrice(products);
-            if (coupons != null) {
-                TreeSet<Double> couponPrices = new TreeSet<>();
-                int anyProductCouponBestValue = anyProductBestCoupon(coupons);
-                if (anyProductCouponBestValue > 0) {
-                    couponPrices.add(totalPrice - (totalPrice * ((double) anyProductCouponBestValue / 100)));
-                }
-                Set<Category> categories = checkHowManyProductCategory(products);
-                for (Category category : categories) {
-                    int bestCoupon = specifiedCategoryBestCoupon(coupons, category);
-                    double categoryTotalPrice = getTotalPriceForCategory(products, category);
-                    couponPrices.add(totalPrice - (categoryTotalPrice * ((double) bestCoupon / 100)));
-                }
-                totalPrice = couponPrices.first();
-            }
+        double totalPrice;
+        if (products == null) {
+            return 0;
         }
-        String price = String.format("%.2f", totalPrice);
-        price = price.replace(",", ".");
-        return Double.parseDouble(price);
-    }
-
-    private Set<Category> checkHowManyProductCategory(List<Product> products) {
-        return products.stream()
-                .map(Product::getCategory)
-                .collect(Collectors.toSet());
-    }
-
-    private double getTotalPriceForCategory(List<Product> products, Category category) {
-        return products.stream()
-                .filter(x -> x.getCategory().equals(category))
-                .map(Product::getPrice)
-                .reduce(0.0, Double::sum);
+        totalPrice = totalProductsPrice(products);
+        if (coupons == null) {
+            return (double) Math.round(totalPrice * 100.0) / 100;
+        }
+        double bestPrice = totalPrice;
+        int anyProductCouponBestValue = anyProductBestCoupon(coupons);
+        if (anyProductCouponBestValue > 0) {
+            bestPrice = totalPrice - (totalPrice * ((double) anyProductCouponBestValue / 100));
+        }
+        Map<Category, Double> productsPricePerCategory = products.stream()
+                .collect(Collectors.groupingBy(Product::getCategory, Collectors.summingDouble(Product::getPrice)));
+        for (Map.Entry<Category, Double> categoryDoubleEntry : productsPricePerCategory.entrySet()) {
+            int bestCoupon = specifiedCategoryBestCoupon(coupons, categoryDoubleEntry.getKey());
+            double categoryTotalPrice = categoryDoubleEntry.getValue();
+            double priceForThisCoupon = totalPrice - (categoryTotalPrice * ((double) bestCoupon / 100));
+            bestPrice = Math.min(bestPrice, priceForThisCoupon);
+        }
+        return (double) Math.round(bestPrice * 100.0) / 100;
     }
 
     private int anyProductBestCoupon(List<Coupon> coupons) {
-        TreeSet<Integer> cuponValues = new TreeSet<>();
+        TreeSet<Integer> couponValues = new TreeSet<>();
         if (coupons != null) {
-            cuponValues = findCouponsByCategory(coupons, null);
+            couponValues = findCouponsByCategory(coupons, null);
         }
-        if (cuponValues.isEmpty()) {
+        if (couponValues.isEmpty()) {
             return 0;
         }
-        return cuponValues.last();
+        return couponValues.last();
     }
 
     private int specifiedCategoryBestCoupon(List<Coupon> coupons, Category category) {
-        TreeSet<Integer> cuponValues = new TreeSet<>();
+        TreeSet<Integer> couponValues = new TreeSet<>();
         if (coupons != null) {
-            cuponValues = findCouponsByCategory(coupons, category);
+            couponValues = findCouponsByCategory(coupons, category);
         }
-        if (cuponValues.isEmpty()) {
+        if (couponValues.isEmpty()) {
             return 0;
         }
-        return cuponValues.last();
+        return couponValues.last();
     }
 
     private TreeSet<Integer> findCouponsByCategory(List<Coupon> coupons, Category category) {
